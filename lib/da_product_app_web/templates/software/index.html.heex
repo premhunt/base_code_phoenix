@@ -1,0 +1,11 @@
+<h1>Software List</h1>
+<ul>
+  <%= for software <- @software_list do %>
+    <li>
+      <a href={Routes.software_path(@conn, :show, software.id)}>
+        <%= software.name %>
+      </a>
+    </li>
+  <% end %>
+</ul>
+

@@ -1,0 +1,29 @@
+<h1>Software List</h1>
+
+<!-- Include Ag-Grid CSS & JS -->
+
+<!-- Ag-Grid Container -->
+<div id="softwareGrid" class="ag-theme-alpine" style="height: 500px; width: 100%;"></div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const gridOptions = {
+      columnDefs: [
+        { headerName: "ID", field: "id", sortable: true, filter: true },
+        { headerName: "Name", field: "name", sortable: true, filter: true, cellRenderer: params => `<a href="/softwares/${params.value.id}">${params.value.name}</a>` },
+        { headerName: "Slug", field: "slug", sortable: true, filter: true },
+        { headerName: "Last Updated", field: "last_updated", sortable: true, filter: true },
+        { headerName: "Inserted At", field: "inserted_at", sortable: true, filter: true },
+        { headerName: "Updated At", field: "updated_at", sortable: true, filter: true }
+      ],
+      rowData: <%= Phoenix.HTML.raw(@software_list_json) %>,
+      //rowData: <%= Phoenix.HTML.raw(Jason.encode!(@software_list_json)) %>,
+      //rowData: <%= (@software_list_json) %>,
+      pagination: true
+    };
+
+    const gridDiv = document.querySelector("#softwareGrid");
+     agGrid.createGrid(gridDiv,gridOptions);
+  });
+</script>
+

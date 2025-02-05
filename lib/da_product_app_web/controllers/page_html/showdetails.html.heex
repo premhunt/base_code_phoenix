@@ -1,0 +1,12 @@
+<h1><%= @software.name %> Versions</h1>
+<ul>
+  <%= for version <- @software.versions do %>
+    <li>
+      Cycle: <%= version.cycle %> - Latest: <%= version.latest_version %>
+      (EOL: <%= version.eol_date || "Active" %>)
+    </li>
+  <% end %>
+</ul>
+
+<a href={Routes.software_path(@conn, :index)}>Back to List</a>
+
