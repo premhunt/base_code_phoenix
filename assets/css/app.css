@@ -1,5 +1,9 @@
 @import "tailwindcss/base";
+@import "../../deps/petal_components/assets/default.css";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
 /* This file is for your main application CSS */
+.inner-container {
+	width:100%;
+}

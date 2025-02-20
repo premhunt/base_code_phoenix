@@ -67,7 +67,9 @@ defmodule DaProductApp.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      {:saas_kit, "~> 1.0.7", only: :dev}
+      {:petal_components, "~> 2.8.1"},
+      #{:saas_kit, "~> 1.0.7", only: :dev}
+      {:saas_kit, "~> 1.0.7"}
     ]
   end
 

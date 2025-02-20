@@ -89,6 +89,7 @@ defmodule DaProductAppWeb do
       import Phoenix.HTML
       # Core UI components
       import DaProductAppWeb.CoreComponents
+      use PetalComponents
       use DaProductAppWeb.ComponentLibrary
 
       # Shortcut for generating JS commands

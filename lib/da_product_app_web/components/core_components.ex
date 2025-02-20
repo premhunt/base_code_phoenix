@@ -2,22 +2,18 @@ defmodule DaProductAppWeb.CoreComponents do
   @moduledoc """
   Provides core UI components.
 
-  At first glance, this module may seem daunting, but its goal is to provide
-  core building blocks for your application, such as modals, tables, and
-  forms. The components consist mostly of markup and are well-documented
-  with doc strings and declarative assigns. You may customize and style
-  them in any way you want, based on your application growth and needs.
+  The components in this module use Tailwind CSS, a utility-first CSS framework.
+  See the [Tailwind CSS documentation](https://tailwindcss.com) to learn how to
+  customize the generated components in this module.
 
-  The default components use Tailwind CSS, a utility-first CSS framework.
-  See the [Tailwind CSS documentation](https://tailwindcss.com) to learn
-  how to customize them or feel free to swap in another framework altogether.
-
-  Icons are provided by [heroicons](https://heroicons.com). See `icon/1` for usage.
+  Icons are provided by [heroicons](https://heroicons.com), using the
+  [heroicons_elixir](https://github.com/mveytsman/heroicons_elixir) project.
   """
   use Phoenix.Component
-  import DaProductAppWeb.Gettext
 
   alias Phoenix.LiveView.JS
+  import DaProductAppWeb.Gettext
+  import PetalComponents.Icon
 
   @doc """
   Renders a modal.
@@ -25,33 +21,40 @@ defmodule DaProductAppWeb.CoreComponents do
   ## Examples
 
       <.modal id="confirm-modal">
-        This is a modal.
+        Are you sure?
+        <:confirm>OK</:confirm>
+        <:cancel>Cancel</:cancel>
       </.modal>
 
-  JS commands may be passed to the `:on_cancel` to configure
-  the closing/cancel event, for example:
+  JS commands may be passed to the `:on_cancel` and `on_confirm` attributes
+  for the caller to react to each button press, for example:
 
-      <.modal id="confirm" on_cancel={JS.navigate(~p"/posts")}>
-        This is another modal.
+      <.modal id="confirm" on_confirm={JS.push("delete")} on_cancel={JS.navigate(~p"/posts")}>
+        Are you sure you?
+        <:confirm>OK</:confirm>
+        <:cancel>Cancel</:cancel>
       </.modal>
-
   """
   attr :id, :string, required: true
   attr :show, :boolean, default: false
   attr :on_cancel, JS, default: %JS{}
+  attr :on_confirm, JS, default: %JS{}
+
   slot :inner_block, required: true
   slot :title
+  slot :subtitle
+  slot :confirm
+  slot :cancel
 
-  def modal(assigns) do
+  def phx_modal(assigns) do
     ~H"""
     <div
       id={@id}
       phx-mounted={@show && show_modal(@id)}
       phx-remove={hide_modal(@id)}
-      data-cancel={JS.exec(@on_cancel, "phx-remove")}
       class="relative z-50 hidden"
     >
-      <div id={"#{@id}-bg"} class="fixed bg-gray-900 bg-opacity-50 dark:bg-opacity-80 fixed inset-0 transition-opacity" aria-hidden="true" />
+      <div id={"#{@id}-bg"} class="fixed inset-0 transition-opacity bg-zinc-50/90" aria-hidden="true" />
       <div
         class="fixed inset-0 overflow-y-auto"
         aria-labelledby={"#{@id}-title"}
@@ -60,40 +63,58 @@ defmodule DaProductAppWeb.CoreComponents do
         aria-modal="true"
         tabindex="0"
       >
-        <div class="flex min-h-full items-center justify-center">
+        <div class="flex items-center justify-center min-h-full">
           <div class="w-full max-w-3xl p-4 sm:p-6 lg:py-8">
             <.focus_wrap
               id={"#{@id}-container"}
-              phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
+              phx-mounted={@show && show_modal(@id)}
+              phx-window-keydown={hide_modal(@on_cancel, @id)}
               phx-key="escape"
-              phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="relative bg-white rounded-lg shadow dark:bg-gray-700"
+              phx-click-away={hide_modal(@on_cancel, @id)}
+              class="relative hidden transition bg-white shadow-lg rounded-2xl p-14 shadow-zinc-700/10 ring-1 ring-zinc-700/10"
             >
-              <div class="absolute top-4 right-4">
-                <button
-                  phx-click={JS.exec("data-cancel", to: "##{@id}")}
+              <div class="absolute top-6 right-5">
+                <phx_button
+                  phx-click={hide_modal(@on_cancel, @id)}
                   type="button"
-                  class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                  class="flex-none p-3 -m-3 opacity-20 hover:opacity-40"
                   aria-label={gettext("close")}
                 >
-                  <.icon name="hero-x-mark-solid" class="h-5 w-5" />
-                </button>
+                  <.icon name="hero-x-mark-solid" class="w-5 h-5 stroke-current" />
+                </phx_button>
               </div>
-              <header :if={@title != []} class="p-4 border-b rounded-t dark:border-gray-600">
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-                  <%= render_slot(@title) %>
-                </h3>
-                <p
-                  :if={@subtitle != []}
-                  id={"#{@id}-description"}
-                  class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400"
-                >
-                  <%= render_slot(@subtitle) %>
-                </p>
-              </header>
-
-              <div id={"#{@id}-content"} class="p-6 space-y-6">
+              <div id={"#{@id}-content"}>
+                <header :if={@title != []}>
+                  <h1 id={"#{@id}-title"} class="text-lg font-semibold leading-8 text-zinc-800">
+                    <%= render_slot(@title) %>
+                  </h1>
+                  <p
+                    :if={@subtitle != []}
+                    id={"#{@id}-description"}
+                    class="mt-2 text-sm leading-6 text-zinc-600"
+                  >
+                    <%= render_slot(@subtitle) %>
+                  </p>
+                </header>
                 <%= render_slot(@inner_block) %>
+                <div :if={@confirm != [] or @cancel != []} class="flex items-center gap-5 mb-4 ml-6">
+                  <.phx_button
+                    :for={confirm <- @confirm}
+                    id={"#{@id}-confirm"}
+                    phx-click={@on_confirm}
+                    phx-disable-with
+                    class="px-3 py-2"
+                  >
+                    <%= render_slot(confirm) %>
+                  </.phx_button>
+                  <.link
+                    :for={cancel <- @cancel}
+                    phx-click={hide_modal(@on_cancel, @id)}
+                    class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
+                  >
+                    <%= render_slot(cancel) %>
+                  </.link>
+                </div>
               </div>
             </.focus_wrap>
           </div>
@@ -111,39 +132,44 @@ defmodule DaProductAppWeb.CoreComponents do
       <.flash kind={:info} flash={@flash} />
       <.flash kind={:info} phx-mounted={show("#flash")}>Welcome Back!</.flash>
   """
-  attr :id, :string, doc: "the optional id of flash container"
+  attr :id, :string, default: "flash", doc: "the optional id of flash container"
   attr :flash, :map, default: %{}, doc: "the map of flash messages to display"
   attr :title, :string, default: nil
   attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
+  attr :autoshow, :boolean, default: true, doc: "whether to auto show the flash on mount"
+  attr :close, :boolean, default: true, doc: "whether the flash can be closed"
   attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
 
   slot :inner_block, doc: "the optional inner block that renders the flash message"
 
   def flash(assigns) do
-    assigns = assign_new(assigns, :id, fn -> "flash-#{assigns.kind}" end)
-
     ~H"""
     <div
       :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
       id={@id}
+      phx-mounted={@autoshow && show("##{@id}")}
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
       class={[
-        "fixed top-2 right-2 w-80 sm:w-96 z-50 rounded-lg p-4 shadow-md",
-        @kind == :info && "text-blue-800 bg-blue-50 dark:bg-gray-800 dark:text-blue-400",
-        @kind == :error && "text-red-800 bg-red-50 dark:bg-gray-800 dark:text-red-400",
-        @id == "client-error" && "transition delay-300"
+        "fixed hidden top-2 right-2 w-80 sm:w-96 z-50 rounded-lg p-3 shadow-md shadow-zinc-900/5 ring-1",
+        @kind == :info && "bg-emerald-50 text-emerald-800 ring-emerald-500 fill-cyan-900",
+        @kind == :error && "bg-rose-50 p-3 text-rose-900 shadow-md ring-rose-500 fill-rose-900"
       ]}
       {@rest}
     >
-      <p :if={@title} class="flex items-center text-sm gap-1.5 font-semibold leading-6">
-        <.icon :if={@kind == :info} name="hero-information-circle-mini" class="h-4 w-4" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle-mini" class="h-4 w-4" />
+      <p :if={@title} class="flex items-center gap-1.5 text-[0.8125rem] font-semibold leading-6">
+        <.icon name="hero-information-circle" :if={@kind == :info} mini class="w-4 h-4" />
+        <.icon name="hero-exclamation-circle" :if={@kind == :error} mini class="w-4 h-4" />
         <%= @title %>
       </p>
-      <p class="mt-2 text-sm leading-5"><%= msg %></p>
-      <button type="button" class="group absolute top-1 right-1 p-2" aria-label={DaProductAppWeb.Gettext.gettext("close")}>
-        <.icon name="hero-x-mark-solid" class="h-5 w-5 opacity-40 group-hover:opacity-70" />
+      <p class="mt-2 text-[0.8125rem] leading-5"><%= msg %></p>
+      <button
+        :if={@close}
+        type="button"
+        class="absolute p-2 group top-2 right-1"
+        aria-label={gettext("close")}
+      >
+        <.icon name="hero-x-mark-solid" class="w-5 h-5 stroke-current opacity-40 group-hover:opacity-70" />
       </button>
     </div>
     """
@@ -157,36 +183,22 @@ defmodule DaProductAppWeb.CoreComponents do
       <.flash_group flash={@flash} />
   """
   attr :flash, :map, required: true, doc: "the map of flash messages"
-  attr :id, :string, default: "flash-group", doc: "the optional id of flash container"
 
   def flash_group(assigns) do
     ~H"""
-    <div id={@id}>
-      <.flash kind={:info} title="Success!" flash={@flash} />
-      <.flash kind={:error} title="Error!" flash={@flash} />
-      <.flash
-        id="client-error"
-        kind={:error}
-        title="We can't find the internet"
-        phx-disconnected={show(".phx-client-error #client-error")}
-        phx-connected={hide("#client-error")}
-        hidden
-      >
-        Attempting to reconnect <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
-      </.flash>
-
-      <.flash
-        id="server-error"
-        kind={:error}
-        title="Something went wrong!"
-        phx-disconnected={show(".phx-server-error #server-error")}
-        phx-connected={hide("#server-error")}
-        hidden
-      >
-        Hang in there while we get back on track
-        <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
-      </.flash>
-    </div>
+    <.flash kind={:info} title="Success!" flash={@flash} />
+    <.flash kind={:error} title="Error!" flash={@flash} />
+    <.flash
+      id="disconnected"
+      kind={:error}
+      title="We can't find the internet"
+      close={false}
+      autoshow={false}
+      phx-disconnected={show("#disconnected")}
+      phx-connected={hide("#disconnected")}
+    >
+      Attempting to reconnect <.icon name="hero-arrow-path" class="inline w-3 h-3 ml-1 animate-spin" />
+    </.flash>
     """
   end
 
@@ -207,7 +219,7 @@ defmodule DaProductAppWeb.CoreComponents do
   attr :as, :any, default: nil, doc: "the server side parameter to collect all input under"
 
   attr :rest, :global,
-    include: ~w(autocomplete name rel action enctype method novalidate target multipart),
+    include: ~w(autocomplete name rel action enctype method novalidate target),
     doc: "the arbitrary HTML attributes to apply to the form tag"
 
   slot :inner_block, required: true
@@ -216,9 +228,9 @@ defmodule DaProductAppWeb.CoreComponents do
   def simple_form(assigns) do
     ~H"""
     <.form :let={f} for={@for} as={@as} {@rest}>
-      <div class="space-y-8">
+      <div class="mt-10 space-y-8 bg-white">
         <%= render_slot(@inner_block, f) %>
-        <div :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
+        <div :for={action <- @actions} class="flex items-center justify-between gap-6 mt-2">
           <%= render_slot(action, f) %>
         </div>
       </div>
@@ -234,27 +246,19 @@ defmodule DaProductAppWeb.CoreComponents do
       <.button>Send!</.button>
       <.button phx-click="go" class="ml-2">Send!</.button>
   """
-  attr :kind, :atom, values: [:primary, :secondary, :dark, :light, :link, :success, :danger], default: :primary
   attr :type, :string, default: nil
   attr :class, :string, default: nil
   attr :rest, :global, include: ~w(disabled form name value)
 
   slot :inner_block, required: true
 
-  def button(assigns) do
+  def phx_button(assigns) do
     ~H"""
     <button
       type={@type}
       class={[
-        "font-medium rounded-lg text-sm px-5 py-2.5 focus:ring-4 inline-flex items-center gap-2 focus:outline-none phx-submit-loading:opacity-75",
-        @kind == :primary && "text-white bg-blue-700 hover:bg-blue-800 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800",
-        @kind == :secondary && "text-gray-900 bg-white border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700",
-        @kind == :dark && "text-white bg-gray-800 hover:bg-gray-900 focus:ring-4 focus:ring-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700",
-        @kind == :light && "text-gray-900 bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700",
-        @kind == :link && "border border-transparent text-blue-600 dark:text-blue-500 hover:underline",
-        @kind == :success && "text-white bg-green-700 hover:bg-green-800 focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800",
-        @kind == :danger && "text-white bg-red-700 hover:bg-red-800 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900",
-        Map.get(@rest, :disabled) && "cursor-not-allowed bg-opacity-75 text-opacity-75",
+        "phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3",
+        "text-sm font-semibold leading-6 text-white active:text-white/80",
         @class
       ]}
       {@rest}
@@ -267,22 +271,9 @@ defmodule DaProductAppWeb.CoreComponents do
   @doc """
   Renders an input with label and error messages.
 
-  A `Phoenix.HTML.FormField` may be passed as argument,
-  which is used to retrieve the input name, id, and values.
-  Otherwise all attributes may be passed explicitly.
-
-  ## Types
-
-  This function accepts all HTML input types, considering that:
-
-    * You may also set `type="select"` to render a `<select>` tag
-
-    * `type="checkbox"` is used exclusively to render boolean values
-
-    * For live file uploads, see `Phoenix.Component.live_file_input/1`
-
-  See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
-  for more information.
+  A `%Phoenix.HTML.Form{}` and field name may be passed to the input
+  to build input names and error messages, or all the attributes and
+  errors may be passed explicitly.
 
   ## Examples
 
@@ -307,33 +298,26 @@ defmodule DaProductAppWeb.CoreComponents do
   attr :prompt, :string, default: nil, doc: "the prompt for select inputs"
   attr :options, :list, doc: "the options to pass to Phoenix.HTML.Form.options_for_select/2"
   attr :multiple, :boolean, default: false, doc: "the multiple flag for select inputs"
-
-  attr :rest, :global,
-    include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
-                multiple pattern placeholder readonly required rows size step)
-
+  attr :rest, :global, include: ~w(autocomplete cols disabled form max maxlength min minlength
+                                   pattern placeholder readonly required rows size step)
   slot :inner_block
 
-  def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
-    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
-
+  def phx_input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
     assigns
     |> assign(field: nil, id: assigns.id || field.id)
-    |> assign(:errors, Enum.map(errors, &translate_error(&1)))
+    |> assign(:errors, Enum.map(field.errors, &translate_error(&1)))
     |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
     |> assign_new(:value, fn -> field.value end)
-    |> input()
+    |> phx_input()
   end
 
-  def input(%{type: "checkbox"} = assigns) do
+  def phx_input(%{type: "checkbox", value: value} = assigns) do
     assigns =
-      assign_new(assigns, :checked, fn ->
-        Phoenix.HTML.Form.normalize_value("checkbox", assigns[:value])
-      end)
+      assign_new(assigns, :checked, fn -> Phoenix.HTML.Form.normalize_value("checkbox", value) end)
 
     ~H"""
     <div>
-      <label class="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+      <label class="flex items-center gap-4 text-sm leading-6 text-zinc-600">
         <input type="hidden" name={@name} value="false" />
         <input
           type="checkbox"
@@ -341,7 +325,7 @@ defmodule DaProductAppWeb.CoreComponents do
           name={@name}
           value="true"
           checked={@checked}
-          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+          class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
           {@rest}
         />
         <%= @label %>
@@ -351,19 +335,14 @@ defmodule DaProductAppWeb.CoreComponents do
     """
   end
 
-  def input(%{type: "select"} = assigns) do
+  def phx_input(%{type: "select"} = assigns) do
     ~H"""
-    <div class="space-y-1">
-      <.label :if={@label} for={@id}><%= @label %></.label>
+    <div>
+      <.phx_label for={@id}><%= @label %></.phx_label>
       <select
         id={@id}
         name={@name}
-        class={[
-          "block w-full p-2.5 bg-gray-50 text-gray-900 text-sm rounded-lg border border-gray-300",
-          "focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500",
-          "dark:text-white dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400",
-          "dark:focus:ring-blue-500/5 dark:focus:border-blue-500"
-        ]}
+        class="block w-full px-3 py-2 mt-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-zinc-500 focus:border-zinc-500 sm:text-sm"
         multiple={@multiple}
         {@rest}
       >
@@ -375,20 +354,18 @@ defmodule DaProductAppWeb.CoreComponents do
     """
   end
 
-  def input(%{type: "textarea"} = assigns) do
+  def phx_input(%{type: "textarea"} = assigns) do
     ~H"""
-    <div class="space-y-2">
-      <.label :if={@label} for={@id}><%= @label %></.label>
+    <div>
+      <.phx_label for={@id}><%= @label %></.phx_label>
       <textarea
         id={@id || @name}
         name={@name}
         class={[
-          "block w-full p-2.5 min-h-[6rem] bg-gray-50 text-sm rounded-lg border border-gray-300 text-gray-900",
-          "focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500",
-          "dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500/5 dark:focus:border-blue-500",
-          "phx-no-feedback:border-gray-300 phx-no-feedback:focus:border-blue-500 phx-no-feedback:focus:ring-blue-500/5",
-          "phx-no-feedback:dark:border-gray-600 phx-no-feedback:dark:focus:border-blue-500 phx-no-feedback:dark:focus:ring-blue-500/5",
-          @errors != [] && "text-red-900 placeholder-red-700 border-red-500 focus:ring-red-500 focus:border-red-500 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500"
+          "mt-2 block min-h-[6rem] w-full rounded-lg border-zinc-300 py-[7px] px-[11px]",
+          "text-zinc-900 focus:border-zinc-400 focus:outline-none focus:ring-4 focus:ring-zinc-800/5 sm:text-sm sm:leading-6",
+          "border-zinc-300 focus:border-zinc-400 focus:ring-zinc-800/5",
+          @errors != [] && "border-rose-400 focus:border-rose-400 focus:ring-rose-400/10"
         ]}
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
@@ -397,23 +374,20 @@ defmodule DaProductAppWeb.CoreComponents do
     """
   end
 
-  # All other inputs text, datetime-local, url, password, etc. are handled here...
-  def input(assigns) do
+  def phx_input(assigns) do
     ~H"""
-    <div class="space-y-2">
-      <.label :if={@label} for={@id}><%= @label %></.label>
+    <div>
+      <.phx_label for={@id}><%= @label %></.phx_label>
       <input
         type={@type}
         name={@name}
         id={@id || @name}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         class={[
-          "block w-full p-2.5 bg-gray-50 text-sm rounded-lg border border-gray-300 text-gray-900",
-          "focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500",
-          "dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500/5 dark:focus:border-blue-500",
-          "phx-no-feedback:border-gray-300 phx-no-feedback:focus:border-blue-500 phx-no-feedback:focus:ring-blue-500/5",
-          "phx-no-feedback:dark:border-gray-600 phx-no-feedback:dark:focus:border-blue-500 phx-no-feedback:dark:focus:ring-blue-500/5",
-          @errors != [] && "text-red-900 placeholder-red-700 border-red-500 focus:ring-red-500 focus:border-red-500 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500"
+          "mt-2 block w-full rounded-lg border-zinc-300 py-[7px] px-[11px]",
+          "text-zinc-900 focus:outline-none focus:ring-4 sm:text-sm sm:leading-6",
+          "border-zinc-300 focus:border-zinc-400 focus:ring-zinc-800/5",
+          @errors != [] && "border-rose-400 focus:border-rose-400 focus:ring-rose-400/10"
         ]}
         {@rest}
       />
@@ -428,9 +402,9 @@ defmodule DaProductAppWeb.CoreComponents do
   attr :for, :string, default: nil
   slot :inner_block, required: true
 
-  def label(assigns) do
+  def phx_label(assigns) do
     ~H"""
-    <label for={@for} class="block text-sm font-medium text-gray-900 dark:text-white">
+    <label for={@for} class="block text-sm font-semibold leading-6 text-zinc-800">
       <%= render_slot(@inner_block) %>
     </label>
     """
@@ -443,8 +417,8 @@ defmodule DaProductAppWeb.CoreComponents do
 
   def error(assigns) do
     ~H"""
-    <p class="phx-no-feedback:hidden mt-3 flex gap-3 text-sm text-red-600 dark:text-red-500">
-      <.icon name="hero-exclamation-circle-mini" class="mt-0.5 w-5 h-5 flex-none" />
+    <p class="flex gap-3 mt-3 text-sm leading-6 text-rose-600">
+      <.icon name="hero-exclamation-circle-mini" class="mt-0.5 h-5 w-5 flex-none fill-rose-500" />
       <%= render_slot(@inner_block) %>
     </p>
     """
@@ -461,16 +435,16 @@ defmodule DaProductAppWeb.CoreComponents do
 
   def header(assigns) do
     ~H"""
-    <header class={[@actions != [] && "flex items-center justify-between gap-6", "mb-12", @class]}>
+    <header class={[@actions != [] && "flex items-center justify-between gap-6", @class]}>
       <div>
-        <h1 class="text-lg font-semibold leading-8 text-gray-900 dark:text-white">
+        <h1 class="text-lg font-semibold leading-8 text-zinc-800">
           <%= render_slot(@inner_block) %>
         </h1>
-        <p :if={@subtitle != []} class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+        <p :if={@subtitle != []} class="mt-2 text-sm leading-6 text-zinc-600">
           <%= render_slot(@subtitle) %>
         </p>
       </div>
-      <div class="flex-none space-x-4"><%= render_slot(@actions) %></div>
+      <div class="flex-none"><%= render_slot(@actions) %></div>
     </header>
     """
   end
@@ -500,42 +474,45 @@ defmodule DaProductAppWeb.CoreComponents do
 
   slot :action, doc: "the slot for showing user actions in the last table column"
 
-  def table(assigns) do
+  def phx_table(assigns) do
     assigns =
       with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
         assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
       end
 
     ~H"""
-    <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-      <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+    <div class="px-4 overflow-y-auto sm:overflow-visible sm:px-0">
+      <table class="mt-11 w-[40rem] sm:w-full">
+        <thead class="text-left text-[0.8125rem] leading-6 text-zinc-500">
           <tr>
-            <th :for={col <- @col} class="px-6 py-3"><%= col[:label] %></th>
-            <th class="relative p-0 pb-4"><span class="sr-only"><%= DaProductAppWeb.Gettext.gettext("Actions") %></span></th>
+            <th :for={col <- @col} class="p-0 pb-4 pr-6 font-normal"><%= col[:label] %></th>
+            <th class="relative p-0 pb-4"><span class="sr-only"><%= gettext("Actions") %></span></th>
           </tr>
         </thead>
         <tbody
           id={@id}
           phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
+          class="relative text-sm leading-6 border-t divide-y divide-zinc-100 border-zinc-200 text-zinc-700"
         >
-          <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="bg-white border-b last:border-b-0 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+          <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group hover:bg-zinc-50">
             <td
               :for={{col, i} <- Enum.with_index(@col)}
               phx-click={@row_click && @row_click.(row)}
-              class={[
-                "px-6 py-4",
-                i == 0 && "text-gray-900 whitespace-nowrap dark:text-white",
-                @row_click && "hover:cursor-pointer"
-              ]}
+              class={["relative p-0", @row_click && "hover:cursor-pointer"]}
             >
-              <%= render_slot(col, @row_item.(row)) %>
+              <div class="block py-4 pr-6">
+                <span class="absolute right-0 -inset-y-px -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
+                <span class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
+                  <%= render_slot(col, @row_item.(row)) %>
+                </span>
+              </div>
             </td>
-            <td :if={@action != []} class="px-6 py-4 w-14">
-              <div class="space-x-2 relative whitespace-nowrap py-4 text-right text-sm font-medium">
+            <td :if={@action != []} class="relative p-0 w-14">
+              <div class="relative py-4 text-sm font-medium text-right whitespace-nowrap">
+                <span class="absolute left-0 -inset-y-px -right-4 group-hover:bg-zinc-50 sm:rounded-r-xl" />
                 <span
                   :for={action <- @action}
-                  class="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+                  class="relative ml-4 font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
                 >
                   <%= render_slot(action, @row_item.(row)) %>
                 </span>
@@ -564,12 +541,14 @@ defmodule DaProductAppWeb.CoreComponents do
 
   def list(assigns) do
     ~H"""
-    <dl class="-my-4 divide-y divide-gray-200 dark:divide-gray-700">
-      <div :for={item <- @item} class="flex gap-4 py-4 sm:gap-8">
-        <dt class="w-1/4 flex-none text-[0.8125rem] leading-6 text-gray-500 dark:text-gray-400"><%= item.title %></dt>
-        <dd class="text-sm leading-6 text-gray-900 dark:text-white"><%= render_slot(item) %></dd>
-      </div>
-    </dl>
+    <div class="mt-14">
+      <dl class="-my-4 divide-y divide-zinc-100">
+        <div :for={item <- @item} class="flex gap-4 py-4 sm:gap-8">
+          <dt class="w-1/4 flex-none text-[0.8125rem] leading-6 text-zinc-500"><%= item.title %></dt>
+          <dd class="text-sm leading-6 text-zinc-700"><%= render_slot(item) %></dd>
+        </div>
+      </dl>
+    </div>
     """
   end
 
@@ -585,12 +564,12 @@ defmodule DaProductAppWeb.CoreComponents do
 
   def back(assigns) do
     ~H"""
-    <div class="mt-12">
+    <div class="mt-16">
       <.link
         navigate={@navigate}
-        class="flex items-center gap-2 mr-8 text-sm text-gray-500 transition-colors duration-200 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+        class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
       >
-        <.icon name="hero-arrow-left-solid" class="w-4 h-4" />
+        <.icon name="hero-arrow-left-solid" class="inline w-3 h-3 stroke-current" />
         <%= render_slot(@inner_block) %>
       </.link>
     </div>
@@ -598,29 +577,100 @@ defmodule DaProductAppWeb.CoreComponents do
   end
 
   @doc """
-  Renders a [Heroicon](https://heroicons.com).
-
-  Heroicons come in three styles – outline, solid, and mini.
-  By default, the outline style is used, but solid and mini may
-  be applied by using the `-solid` and `-mini` suffix.
-
-  You can customize the size and colors of the icons by setting
-  width, height, and background color classes.
-
-  Icons are extracted from your `assets/vendor/heroicons` directory and bundled
-  within your compiled app.css by the plugin in your `assets/tailwind.config.js`.
+  A button that switches between light and dark modes.
+  Pairs with css-theme-switch.js
 
   ## Examples
-
-      <.icon name="hero-x-mark-solid" />
-      <.icon name="hero-arrow-path" class="ml-1 w-3 h-3 animate-spin" />
+      <.color_scheme_switch_js />
   """
-  attr :name, :string, required: true
-  attr :class, :string, default: nil
-
-  def icon(%{name: "hero-" <> _} = assigns) do
+  def color_scheme_switch(assigns) do
     ~H"""
-    <span class={[@name, @class]} />
+    <button
+      phx-hook="ColorSchemeHook"
+      type="button"
+      id={Ecto.UUID.generate()}
+      class="color-scheme text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5"
+    >
+      <svg
+        class="hidden w-5 h-5 color-scheme-dark-icon"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+      </svg>
+      <svg
+        class="hidden w-5 h-5 color-scheme-light-icon"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+          fill-rule="evenodd"
+          clip-rule="evenodd"
+        >
+        </path>
+      </svg>
+    </button>
+    """
+  end
+
+  @doc """
+  Used for switching dark/light color schemes.
+
+  This needs to be inlined in the <head> because it will set a class on the document, which affects all "dark" prefixed classed (eg. dark:text-white). If you do this in the body or a separate javascript file then when in dark mode, the page will flash in light mode first before switching to dark mode.
+
+  Utilized by `color-scheme-hook.js`.
+
+  ## Examples
+      <.color_scheme_switch_js />
+  """
+  def color_scheme_switch_js(assigns) do
+    ~H"""
+    <script>
+      window.applyScheme = function(scheme) {
+        if (scheme === "light") {
+          document.documentElement.classList.remove('dark')
+          document
+            .querySelectorAll(".color-scheme-dark-icon")
+            .forEach((el) => el.classList.remove("hidden"));
+          document
+            .querySelectorAll(".color-scheme-light-icon")
+            .forEach((el) => el.classList.add("hidden"));
+          localStorage.scheme = 'light'
+        } else {
+          document.documentElement.classList.add('dark')
+          document
+            .querySelectorAll(".color-scheme-dark-icon")
+            .forEach((el) => el.classList.add("hidden"));
+          document
+            .querySelectorAll(".color-scheme-light-icon")
+            .forEach((el) => el.classList.remove("hidden"));
+          localStorage.scheme = 'dark'
+        }
+      };
+
+      window.toggleScheme = function () {
+        if (document.documentElement.classList.contains('dark')) {
+          applyScheme("light")
+        } else {
+          applyScheme("dark")
+        }
+      }
+
+      window.initScheme = function() {
+        if (localStorage.scheme === 'dark' || (!('scheme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          applyScheme("dark")
+        } else {
+          applyScheme("light")
+        }
+      }
+
+      try {
+        initScheme()
+      } catch (_) {}
+    </script>
     """
   end
 
@@ -631,8 +681,8 @@ defmodule DaProductAppWeb.CoreComponents do
       to: selector,
       transition:
         {"transition-all transform ease-out duration-300",
-         "opacity-0 translate-y-4 sm:-translate-y-12",
-         "opacity-100 translate-y-0"}
+         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
+         "opacity-100 translate-y-0 sm:scale-100"}
     )
   end
 
@@ -642,8 +692,8 @@ defmodule DaProductAppWeb.CoreComponents do
       time: 200,
       transition:
         {"transition-all transform ease-in duration-200",
-         "opacity-100 translate-y-0 sm:mt-0",
-         "opacity-0 translate-y-4 sm:-translate-y-36"}
+         "opacity-100 translate-y-0 sm:scale-100",
+         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
     )
   end
 
@@ -678,13 +728,20 @@ defmodule DaProductAppWeb.CoreComponents do
     # When using gettext, we typically pass the strings we want
     # to translate as a static argument:
     #
+    #     # Translate "is invalid" in the "errors" domain
+    #     dgettext("errors", "is invalid")
+    #
     #     # Translate the number of files with plural rules
     #     dngettext("errors", "1 file", "%{count} files", count)
     #
-    # However the error messages in our forms and APIs are generated
-    # dynamically, so we need to translate them by calling Gettext
-    # with our gettext backend as first argument. Translations are
-    # available in the errors.po file (as we use the "errors" domain).
+    # Because the error messages we show in our forms and APIs
+    # are defined inside Ecto, we need to translate them dynamically.
+    # This requires us to call the Gettext module passing our gettext
+    # backend as first argument.
+    #
+    # Note we use the "errors" domain, which means translations
+    # should be written to the errors.po file. The :count option is
+    # set by Ecto and indicates we should also apply plural rules.
     if count = opts[:count] do
       Gettext.dngettext(DaProductAppWeb.Gettext, "errors", msg, msg, count, opts)
     else

@@ -1,0 +1,102 @@
+<h1>Software List</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>SwiftBOM - SBOM Generator</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/assets/jquery-3.6.0.min.js"></script>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="w-full h-screen flex">
+        <!-- Column 1: Organization Info (20%) -->
+        <div class="w-1/5 bg-white shadow-md p-4 border-r border-gray-300">
+            <h2 class="text-lg font-semibold mb-2">Organization Info</h2>
+            <div class="mb-4">
+                <span class="block text-gray-600">Document Name</span>
+                <p class="text-gray-800">ACME-INFUSION-1.0-SBOM-DRAFT</p>
+            </div>
+            <button class="bg-blue-500 text-white py-1 px-3 rounded" onclick="$('#orgForm').toggle()">Edit</button>
+            <button class="bg-green-500 text-white py-1 px-3 rounded ml-2" onclick="addOrg()">+</button>
+            <form id="orgForm" class="mt-4 hidden">
+                <input type="text" id="orgName" class="w-full border rounded p-2 mb-2" placeholder="Document Name">
+            </form>
+            <ul id="orgList" class="mt-2 text-gray-800"></ul>
+        </div>
+
+        <!-- Column 2: Primary Component (20%) -->
+        <div class="w-1/5 bg-white shadow-md p-4 border-r border-gray-300">
+            <h2 class="text-lg font-semibold mb-2">Application</h2>
+            <div class="mb-4">
+                <span class="block text-gray-600">Primary Component</span>
+                <p class="text-gray-800">Application Name</p>
+            </div>
+            <button class="bg-blue-500 text-white py-1 px-3 rounded" onclick="$('#appForm').toggle()">Edit</button>
+            <button class="bg-green-500 text-white py-1 px-3 rounded ml-2" onclick="addApp()">+</button>
+            <form id="appForm" class="mt-4 hidden">
+                <input type="text" id="appName" class="w-full border rounded p-2 mb-2" placeholder="Component Name">
+            </form>
+            <ul id="appList" class="mt-2 text-gray-800"></ul>
+        </div>
+
+        <!-- Column 3: Components Table (60%) -->
+        <div class="w-3/5 bg-white shadow-md p-4">
+            <h2 class="text-lg font-semibold mb-2">Components</h2>
+            <button class="bg-green-500 text-white py-1 px-3 rounded mb-2" onclick="addComponent()">+</button>
+            <table class="w-full border">
+                <thead>
+                    <tr class="bg-gray-200">
+                        <th class="border p-2">Component Name</th>
+                        <th class="border p-2">Version</th>
+                        <th class="border p-2">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="componentTable">
+                    <tr>
+                        <td class="border p-2">Example Component</td>
+                        <td class="border p-2">1.0</td>
+                        <td class="border p-2">
+                            <button class="bg-red-500 text-white py-1 px-3 rounded" onclick="$(this).closest('tr').remove()">Delete</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function addOrg() {
+            let name = $("#orgName").val();
+            if (name) {
+                $("#orgList").append("<li>" + name + "</li>");
+                $("#orgName").val('');
+            }
+        }
+
+        function addApp() {
+            let name = $("#appName").val();
+            if (name) {
+                $("#appList").append("<li>" + name + "</li>");
+                $("#appName").val('');
+            }
+        }
+
+        function addComponent() {
+            let name = prompt("Enter Component Name:");
+            let version = prompt("Enter Version:");
+            if (name && version) {
+                $("#componentTable").append(`
+                    <tr>
+                        <td class="border p-2">${name}</td>
+                        <td class="border p-2">${version}</td>
+                        <td class="border p-2">
+                            <button class="bg-red-500 text-white py-1 px-3 rounded" onclick="$(this).closest('tr').remove()">Delete</button>
+                        </td>
+                    </tr>
+                `);
+            }
+        }
+    </script>
+</body>
+</html>
+

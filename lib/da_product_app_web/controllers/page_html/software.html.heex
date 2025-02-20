@@ -1,5 +1,39 @@
 <h1>Software List</h1>
+<style>
+    .pc-review-card
+{
+width:15 rem !important;
+}
+</style>
+<div class="grid grid-cols-4 gap-4">
+  <.review_card 
+    name="Anne"
+    username="@anne"
+    body="I've never seen anything like this before. It's amazing."
+    img="https://res.cloudinary.com/wickedsites/image/upload/v1604268092/unnamed_sagz0l.jpg"
+  />
+  
+  <.review_card 
+    name="John"
+    username="@john"
+    body="This product is a game-changer!"
+    img="https://res.cloudinary.com/wickedsites/image/upload/v1604268092/unnamed_sagz0l.jpg"
+  />
 
+  <.review_card 
+    name="Emma"
+    username="@emma"
+    body="Highly recommend this to everyone."
+    img="https://res.cloudinary.com/wickedsites/image/upload/v1604268092/unnamed_sagz0l.jpg"
+  />
+
+  <.review_card 
+    name="Mike"
+    username="@mike"
+    body="Absolutely love this! Five stars!"
+    img="https://res.cloudinary.com/wickedsites/image/upload/v1604268092/unnamed_sagz0l.jpg"
+  />
+</div>
 <!-- Include Ag-Grid CSS & JS -->
 
 <!-- Ag-Grid Container -->
@@ -7,6 +41,7 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+  console.log("inside domcontent loaded");
     const gridOptions = {
       columnDefs: [
         { headerName: "ID", field: "id", sortable: true, filter: true },
@@ -21,6 +56,7 @@
       //rowData: <%= (@software_list_json) %>,
       pagination: true
     };
+  console.log("inside domcontent loaded 2");
 
     const gridDiv = document.querySelector("#softwareGrid");
      agGrid.createGrid(gridDiv,gridOptions);

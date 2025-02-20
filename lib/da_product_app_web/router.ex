@@ -14,10 +14,10 @@ defmodule DaProductAppWeb.Router do
      plug :put_secure_browser_headers, %{
     "content-security-policy" => 
       "default-src 'self'; " <>
-      "script-src 'self' 'unsafe-inline' ag-grid-community.min.js ag-grid-enterprise.js ag-charts-community.js ag-charts-enterprise.js https://testapp.ariticapp.com; " <>
+      "script-src 'self' 'unsafe-inline' https://testapp.ariticapp.com; " <>
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com  ag-grid-community.min.js ag-grid-enterprise.js ag-charts-community.js ag-charts-enterprise.js; " <>
       "img-src * data:; " <>
-      "font-src 'self' https://fonts.gstatic.com; " <>
+      "font-src 'self' https://fonts.gstatic.com data:; " <>
       "connect-src 'self' wss://ariticapp.com;"
   }
     plug :fetch_current_user
@@ -26,6 +26,18 @@ defmodule DaProductAppWeb.Router do
   pipeline :api do
     plug :accepts, ["json"]
   end
+
+   scope "/", DaProductAppWeb do
+    pipe_through :browser
+
+    get "/", PageController, :home
+    live "/form", FormLive, :index
+    live "/live", PageLive, :index
+    live "/live/modal/:size", PageLive, :modal
+    live "/live/slide_over/:origin", SbomComponentLive, :slide_over
+    live "/live/pagination/:page", PageLive, :pagination
+  end
+
 
   scope "/", DaProductAppWeb do
     pipe_through :browser
@@ -36,9 +48,26 @@ defmodule DaProductAppWeb.Router do
 
   scope "/", DaProductAppWeb do
   pipe_through [:browser, :require_authenticated_user]
-
+  
+  live "/dashboard", DashboardLive, :index
+  live "/sbomcomponent", SbomComponentLive, :index
+  live "/sbomcomponent/:origin", SbomComponentLive, :slide_over
+  
   resources "/software", SoftwareController, only: [:index, :show]
+  resources "/sbom_component", ComponentController, only: [:index]
   end
+
+
+#  scope "/", DaProductAppWeb do
+#    pipe_through [:browser, :require_authenticated_user]
+
+#    live_session :dashboard, layout: {DaProductAppWeb.Layouts, :base} do
+#      live "/dashboard", DashboardLive, :index
+#    end
+
+#  resources "/software", SoftwareController, only: [:index, :show]
+#  end
+
 
   # Other scopes may use custom stacks.
   # scope "/api", DaProductAppWeb do
