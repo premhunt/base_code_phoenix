@@ -25,6 +25,7 @@ defmodule DaProductAppWeb.UserSessionController do
       conn
       |> put_flash(:info, info)
       |> UserAuth.log_in_user(user, user_params)
+      |> redirect(to: "/dashboard")
     else
       # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
       conn

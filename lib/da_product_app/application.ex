@@ -21,6 +21,7 @@ defmodule DaProductApp.Application do
       {Cachex, name: :general_cache}, # You can add additional caches with different names
 
       #{Oban, oban_config()},
+      TwMerge.Cache, #added for saladui
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

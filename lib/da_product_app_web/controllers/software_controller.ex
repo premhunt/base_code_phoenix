@@ -23,14 +23,15 @@ defmodule DaProductAppWeb.SoftwareController do
       #updated_at: software.updated_at
     } end)
 
-  render(conn, :software, software_list_json: Jason.encode!(software_list))
+  render(conn, :software, [software_list_json: Jason.encode!(software_list)])
+
   #render(conn, :software, software_list_json: software_list)
 end
 
 
   def show(conn, %{"id" => id}) do
     software = SoftwareEntry.get_software!(id)
-    render(conn,  :softwaredetails, software: software)
+    render(conn,:softwaredetails, software: software)
   end
 end
 

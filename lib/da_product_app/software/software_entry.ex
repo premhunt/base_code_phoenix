@@ -12,9 +12,7 @@ defmodule DaProductApp.Software.SoftwareEntry do
     field :last_updated, :utc_datetime
     field :inserted_at, :utc_datetime
     field :updated_at, :utc_datetime
-    has_many :versions, DaProductApp.Software.SoftwareVersion, on_delete: :nilify_all  # Prevent crashes if no related data
-
-    #has_many :versions, DaProductApp.Software.SoftwareVersion  # Ensure correct relation
+    has_many :versions, DaProductApp.Software.SoftwareVersion, foreign_key: :software_id, on_delete: :nilify_all
   end
 
   def changeset(software_entry, attrs) do
@@ -28,7 +26,7 @@ defmodule DaProductApp.Software.SoftwareEntry do
   def list_software do
     Repo.all(DaProductApp.Software.SoftwareEntry)
   end
-  def list_software do
+  def list_software_old do
   query = """
   SELECT 
     LOWER(CONCAT(

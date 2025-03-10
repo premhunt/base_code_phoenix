@@ -37,6 +37,10 @@ window.agCharts = agChartsCommunity;
 import "../vendor/ag-charts-enterprise.js";
 
 
+import * as jsPlumbModule from "../vendor/jsplumb.min.js";
+window.jsPlumb = jsPlumbModule.jsPlumb;
+
+
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
   hooks: Hooks,
@@ -66,3 +70,10 @@ liveSocket.connect()
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
 
+
+// Allows to execute JS commands from the server
+window.addEventListener("phx:js-exec", ({detail}) => {
+  document.querySelectorAll(detail.to).forEach(el => {
+    liveSocket.execJS(el, el.getAttribute(detail.attr))
+  })
+})

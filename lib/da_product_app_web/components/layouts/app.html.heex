@@ -1,110 +1,38 @@
 <div class="flex min-h-screen">
-  <!-- Sidebar -->
+  <%= if @current_user do %>
+    <!-- Sidebar for logged-in users -->
+    <.live_component 
+      module={DaProductAppWeb.SidebarComponent} 
+      id="sidebar" 
+      collapsed={assigns[:collapsed] || false}
+    />
 
-    <div class="w-48 bg-gray-100 h-screen fixed left-0 top-0 pt-16 p-4">
- <div class="mt-[-2.5rem] mb-6">
-    <img src="https://aritic.com/wp-content/uploads/2019/08/aritic-logo.png" alt="Logo" class="w-32 h-auto">
-  </div>
-   <.vertical_menu
-    title="Main menu"
-    menu_items={[
-      %{
-        title: "Main",
-        menu_items: [
-      %{
-        name: :dashboard,
-        label: "Dashboard",
-        path: ~p"/dashboard",
-        icon: "hero-home"
-      },
-      %{name: :software, label: "Application", path: ~p"/software", icon: "hero-lifebuoy"},
-      %{name: :settings, label: "Artificates", path: ~p"/users/settings", icon: "hero-cog"},
-      %{
-        name: :settings,
-        label: "Settings",
-        path: ~p"/users/settings",
-        icon: "hero-circle-stack",
-        menu_items: [
-          %{
-            name: :sbomcomponent,
-            label: "Components",
-            path: ~p"/sbomcomponent",
-            icon: "hero-archive-box"
-          },
-          %{
-            name: :settings,
-            label: "Users",
-            path: ~p"/users/settings",
-            icon: "hero-arrow-down-on-square-stack"
-          },
-        ]
-      },
-      %{
-        name: :settings,
-        label: "Tools",
-        path: ~p"/dashboard",
-        icon: "hero-wrench"
-      },
-    ]
-      },
-      %{
-        title: "User",
-        menu_items: [
-          %{
-            name: :settings,
-            label: "Profile",
-            path: ~p"/users/settings",
-            icon: "hero-cog-6-tooth"
-          },
-        ]
-      }
-    ]}
-    current_page={:dashboard}
-  />
-</div>
-
-  <!-- Main Content Wrapper -->
-  <div class="flex-1 flex flex-col lg:ml-48">
-    <!-- Navbar -->
-    <header class="fixed top-0 lg:left-48 right-0 bg-white shadow px-4 sm:px-6 lg:px-8 h-12 flex items-center justify-end z-50">
-      <ul class="flex items-center gap-4">
-        <%= if @current_user do %>
-          <li class="flex items-center gap-2 text-sm text-zinc-900">
-            <.icon name="hero-user" class="h-5 w-5" />
-            <%= @current_user.email %>
-          </li>
-          <li>
-            <.link href={~p"/users/settings"} class="flex items-center gap-2 text-sm font-semibold text-zinc-900 hover:text-zinc-700">
-              <.icon name="hero-cog" class="h-5 w-5" /> Settings
-            </.link>
-          </li>
-          <li>
-            <.link href={~p"/users/log_out"} method="delete" class="flex items-center gap-2 text-sm font-semibold text-zinc-900 hover:text-zinc-700">
-              <.icon name="hero-home" class="h-5 w-5" /> Log out
-            </.link>
-          </li>
-        <% else %>
-          <li>
-            <.link href={~p"/users/register"} class="flex items-center gap-2 text-sm font-semibold text-zinc-900 hover:text-zinc-700">
-              <.icon name="hero-academic-cap" class="h-5 w-5" /> Register
-            </.link>
-          </li>
-          <li>
-            <.link href={~p"/users/log_in"} class="flex items-center gap-2 text-sm font-semibold text-zinc-900 hover:text-zinc-700">
-              <.icon name="hero-arrow-right-circle" class="h-5 w-5" /> Log in
-            </.link>
-          </li>
-        <% end %>
-      </ul>
-    </header>
-
-    <!-- Main Content -->
-    <main class="pt-16 px-0 sm:px-0 lg:px-0">
+    <!-- Main Content Wrapper with Navbar -->
+    <div class="flex-1 flex flex-col lg:ml-48">
+      <!-- Navbar -->
+      <.live_component 
+        module={DaProductAppWeb.NavbarComponent} 
+        id="navbar" 
+        current_user={@current_user} 
+        assigns={assigns} 
+      />
+      <!-- Main Content -->
+      <main class="pt-16 px-0 sm:px-0 lg:px-0">
+        <.container max_width="full">
+          <.flash_group flash={@flash} />
+          {@inner_content}
+        </.container>
+      </main>
+    </div>
+  <% else %>
+    <!-- Layout for guests (no sidebar/navbar) -->
+    <div class="w-full">
       <.container max_width="full">
         <.flash_group flash={@flash} />
         {@inner_content}
       </.container>
-    </main>
-  </div>
+    </div>
+  <% end %>
 </div>
+
 

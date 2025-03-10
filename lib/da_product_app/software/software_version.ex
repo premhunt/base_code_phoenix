@@ -9,7 +9,7 @@ defmodule DaProductApp.Software.SoftwareVersion do
     field :latest_version, :string
     field :link, :string
     field :last_updated, :utc_datetime
-    belongs_to :software_entry, DaProductApp.Software.Software_entry
+    belongs_to :software, DaProductApp.Software.SoftwareEntry, type: :binary_id
     timestamps()
   end
 
@@ -19,4 +19,5 @@ defmodule DaProductApp.Software.SoftwareVersion do
     |> validate_required([:cycle, :software_id])
   end
 end
+
 

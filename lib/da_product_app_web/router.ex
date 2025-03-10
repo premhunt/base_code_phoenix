@@ -27,6 +27,13 @@ defmodule DaProductAppWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :non_csrf do
+    plug :accepts, ["html","json"]
+    plug :fetch_session
+    plug :put_secure_browser_headers
+    # Do NOT include :protect_from_forgery, so CSRF is not enforced here
+  end
+
    scope "/", DaProductAppWeb do
     pipe_through :browser
 
@@ -48,31 +55,24 @@ defmodule DaProductAppWeb.Router do
 
   scope "/", DaProductAppWeb do
   pipe_through [:browser, :require_authenticated_user]
-  
+  live_session :default, on_mount: [{DaProductAppWeb.UserAuth, :mount_current_user}] do 
   live "/dashboard", DashboardLive, :index
   live "/sbomcomponent", SbomComponentLive, :index
   live "/sbomcomponent/:origin", SbomComponentLive, :slide_over
+  live "/workflow", WorkflowLive
+  live "/software", SoftwareLive
+  live "/software/:id", SoftwareLive.Show
+  end
+  #live "/software/:id", SoftwareLive.Show, as: :software_show
+
   
-  resources "/software", SoftwareController, only: [:index, :show]
-  resources "/sbom_component", ComponentController, only: [:index]
+  #resources "/software", SoftwareController, only: [:index, :show]
+  #resources "/sbom_component", ComponentController, only: [:index]
   end
 
 
-#  scope "/", DaProductAppWeb do
-#    pipe_through [:browser, :require_authenticated_user]
-
-#    live_session :dashboard, layout: {DaProductAppWeb.Layouts, :base} do
-#      live "/dashboard", DashboardLive, :index
-#    end
-
-#  resources "/software", SoftwareController, only: [:index, :show]
-#  end
 
 
-  # Other scopes may use custom stacks.
-  # scope "/api", DaProductAppWeb do
-  #   pipe_through :api
-  # end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:da_product_app, :dev_routes) do
@@ -102,6 +102,7 @@ defmodule DaProductAppWeb.Router do
       live "/users/log_in", UserLoginLive, :new
       live "/users/reset_password", UserForgotPasswordLive, :new
       live "/users/reset_password/:token", UserResetPasswordLive, :edit
+      live "/transactions/:id", TransactionLive.Show, :show
     end
 
     post "/users/log_in", UserSessionController, :create
@@ -128,4 +129,19 @@ defmodule DaProductAppWeb.Router do
       live "/users/confirm", UserConfirmationInstructionsLive, :new
     end
   end
+
+
+  scope "/", DaProductAppWeb do
+    pipe_through :non_csrf
+
+    post "/transaction_post", TransactionPostController, :new
+    end
+
+   #scope "/", DaProductAppWeb do
+   # pipe_through :browser
+#
+    # LiveView route showing the transaction details.
+    #live "/transactions/:id", TransactionLive.Show, :show
+  #end
+  
 end

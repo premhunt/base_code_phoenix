@@ -1,0 +1,21 @@
+/* Common overrides and utilities */
+:root {
+  --primary-color: #3b82f6;
+  --secondary-color: #1e40af;
+}
+
+/* Global container styles */
+.container {
+  @apply w-full mx-auto px-4;
+}
+
+/* Import view-specific styles */
+@import "./views/software.css";
+@import "./views/dashboard.css";
+/* Add more view imports as needed */
+
+@layer utilities {
+  .border-border {
+    @apply border-gray-300; /* or any other color you want */
+  }
+}

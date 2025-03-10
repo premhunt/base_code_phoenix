@@ -8,29 +8,53 @@ const path = require("path")
 module.exports = {
   darkMode: 'class',
   content: [
+"../deps/salad_ui/lib/**/*.ex",
     "./js/**/*.js",
     "../lib/da_product_app_web.ex",
     "../lib/da_product_app_web/**/*.*ex",
     "../deps/petal_components/**/*.*ex" // <-- ADD THIS LINE
 
   ],
-  theme: {
+ /* theme: {
     extend: {
-      colors: {
-        brand: "#FD4F00",
-	primary: colors.blue,
-        secondary: colors.pink,
-        success: colors.green,
-        danger: colors.red,
-        warning: colors.yellow,
-        info: colors.sky,
-
-        // Options: slate, gray, zinc, neutral, stone
-        gray: colors.gray,
-      }
+      colors: require("./tailwind.colors.json")
     },
+  }, */
+   theme: {
+          extend: {
+        colors: {
+          primary: {
+            50: "#eff6ff",
+            100: "#dbeafe",
+            200: "#bfdbfe",
+            300: "#93c5fd",
+            400: "#60a5fa",
+            500: "#3b82f6",
+            600: "#2563eb",
+            700: "#1d4ed8",
+            800: "#1e40af",
+            900: "#1e3a8a"
+          },
+        secondary: {
+          50: "#f0fdf4",
+          100: "#dcfce7",
+          200: "#bbf7d0",
+          300: "#86efac",
+          400: "#4ade80",
+          500: "#22c55e",
+          600: "#16a34a",
+          700: "#15803d",
+          800: "#166534",
+          900: "#14532d"
+        },
+		border: colors.gray,
+        // Add other custom colors if needed
+      },
+      },
   },
   plugins: [
+    require("@tailwindcss/typography"),
+    require("./vendor/tailwindcss-animate"),
     require("@tailwindcss/forms"),
     // Allows prefixing tailwind classes with LiveView classes to add rules
     // only when LiveView classes are applied, for example:
